@@ -1,4 +1,4 @@
-package com.example;
+package rsfost.loadtime;
 
 import com.google.inject.Provides;
 import javax.inject.Inject;
@@ -14,40 +14,31 @@ import net.runelite.client.plugins.PluginDescriptor;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Example"
+	name = "Load time"
 )
-public class ExamplePlugin extends Plugin
+public class LoadTimePlugin extends Plugin
 {
 	@Inject
 	private Client client;
 
 	@Inject
-	private ExampleConfig config;
+	private LoadTimeConfig config;
 
 	@Override
 	protected void startUp() throws Exception
 	{
-		log.info("Example started!");
+
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
-		log.info("Example stopped!");
-	}
 
-	@Subscribe
-	public void onGameStateChanged(GameStateChanged gameStateChanged)
-	{
-		if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
-		{
-			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Example says " + config.greeting(), null);
-		}
 	}
 
 	@Provides
-	ExampleConfig provideConfig(ConfigManager configManager)
+	LoadTimeConfig provideConfig(ConfigManager configManager)
 	{
-		return configManager.getConfig(ExampleConfig.class);
+		return configManager.getConfig(LoadTimeConfig.class);
 	}
 }

@@ -1,13 +1,13 @@
-package com.example;
+package rsfost.loadtime;
 
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
-public class ExamplePluginTest
+public class LoadTimePluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(ExamplePlugin.class);
+		ExternalPluginManager.loadBuiltin(LoadTimePlugin.class);
 		RuneLite.main(args);
 	}
 }
