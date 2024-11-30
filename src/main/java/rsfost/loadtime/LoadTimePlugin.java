@@ -29,8 +29,13 @@ import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.Constants;
+import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.GameTick;
+import net.runelite.client.chat.ChatColorType;
+import net.runelite.client.chat.ChatMessageBuilder;
+import net.runelite.client.chat.ChatMessageManager;
+import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -38,15 +43,35 @@ import net.runelite.client.plugins.PluginDescriptor;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Load time"
+	name = "Load time",
+	description = "Estimate load times when moving over a specified distance"
 )
 public class LoadTimePlugin extends Plugin
 {
 	@Inject
 	private Client client;
-
 	@Inject
 	private LoadTimeConfig config;
+	@Inject
+	private ChatMessageManager chatMessageManager;
+
+	private WorldPoint lastWp;
+	private long lastGameTickTime;
+
+	@Subscribe
+	public void onGameTick(GameTick tick)
+	{
+		final long currentTime = System.currentTimeMillis();
+		final WorldPoint currentWp = client.getLocalPlayer().getWorldLocation();
+		if (lastWp != null && lastWp.distanceTo(currentWp) > 50)
+		{
+			final long loadTime = currentTime - lastGameTickTime - Constants.GAME_TICK_LENGTH;
+			log.info("load time: {}ms", loadTime);
+			announceLoadTime(loadTime);
+		}
+		lastGameTickTime = currentTime;
+		lastWp = currentWp;
+	}
 
 	@Override
 	protected void startUp() throws Exception
@@ -64,5 +89,19 @@ public class LoadTimePlugin extends Plugin
 	LoadTimeConfig provideConfig(ConfigManager configManager)
 	{
 		return configManager.getConfig(LoadTimeConfig.class);
+	}
+
+	private void announceLoadTime(long time)
+	{
+		String runeliteMsg = new ChatMessageBuilder()
+			.append(ChatColorType.NORMAL)
+			.append("Load time: ")
+			.append(Long.toString(time))
+			.append("ms")
+			.build();
+		chatMessageManager.queue(QueuedMessage.builder()
+			.type(ChatMessageType.CONSOLE)
+			.runeLiteFormattedMessage(runeliteMsg)
+			.build());
 	}
 }
