@@ -65,8 +65,8 @@ public class LoadTimePlugin extends Plugin
 		final WorldPoint currentWp = client.getLocalPlayer().getWorldLocation();
 		if (lastWp != null && lastWp.distanceTo(currentWp) > 50)
 		{
-			final long loadTime = currentTime - lastGameTickTime - Constants.GAME_TICK_LENGTH;
-			log.info("load time: {}ms", loadTime);
+			final long loadTime = Math.max(0,
+				currentTime - lastGameTickTime - Constants.GAME_TICK_LENGTH);
 			announceLoadTime(loadTime);
 		}
 		lastGameTickTime = currentTime;
