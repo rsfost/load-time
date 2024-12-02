@@ -24,45 +24,22 @@
  */
 package rsfost.loadtime;
 
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-@ConfigGroup(LoadTimeConfig.GROUP)
-public interface LoadTimeConfig extends Config
+@Getter
+@RequiredArgsConstructor
+public enum RegionMode
 {
-    String GROUP = "loadtime";
+    DESTINATION_ONLY("Destination"),
+    ORIGIN_ONLY("Origin"),
+    DESTINATION_OR_ORIGIN("Both");
 
-    @ConfigItem(
-        keyName = "distanceThreshold",
-        name = "Distance threshold",
-        description = "Minimum distance moved in a single game tick to calculate load time",
-        position = 1
-    )
-    default int distanceThreshold()
-    {
-        return 50;
-    }
+    private final String name;
 
-    @ConfigItem(
-        keyName = "regions",
-        name = "Region IDs",
-        description = "Comma-separated list of region IDs to include for load time calculation",
-        position = 2
-    )
-    default String regions()
+    @Override
+    public String toString()
     {
-        return "";
-    }
-
-    @ConfigItem(
-        keyName = "regionMode",
-        name = "Region mode",
-        description = "Whether to treat above list as destination or origin regions, or both",
-        position = 3
-    )
-    default RegionMode regionMode()
-    {
-        return RegionMode.DESTINATION_ONLY;
+        return name;
     }
 }

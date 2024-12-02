@@ -38,8 +38,15 @@ import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.util.Text;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 @PluginDescriptor(
@@ -55,28 +62,45 @@ public class LoadTimePlugin extends Plugin
 	@Inject
 	private ChatMessageManager chatMessageManager;
 
+	private Collection<Integer> regions;
+
 	private WorldPoint lastWp;
 	private long lastGameTickTime;
+	private int lastRegionId;
 
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
 		final long currentTime = System.currentTimeMillis();
 		final WorldPoint currentWp = client.getLocalPlayer().getWorldLocation();
-		if (lastWp != null && lastWp.distanceTo(currentWp) >= config.distanceThreshold())
+		final int currentRegionId = currentWp.getRegionID();
+
+		if (lastWp != null && lastWp.distanceTo(currentWp) >= config.distanceThreshold() && includeRegion())
 		{
 			final long loadTime = Math.max(0,
 				currentTime - lastGameTickTime - Constants.GAME_TICK_LENGTH);
 			announceLoadTime(loadTime);
 		}
+
 		lastGameTickTime = currentTime;
 		lastWp = currentWp;
+		lastRegionId = currentRegionId;
+	}
+
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (!event.getGroup().equals(LoadTimeConfig.GROUP))
+		{
+			return;
+		}
+		parseRegionIds();
 	}
 
 	@Override
 	protected void startUp() throws Exception
 	{
-
+		parseRegionIds();
 	}
 
 	@Override
@@ -91,6 +115,27 @@ public class LoadTimePlugin extends Plugin
 		return configManager.getConfig(LoadTimeConfig.class);
 	}
 
+	private boolean includeRegion()
+	{
+		if (regions.isEmpty())
+		{
+			return true;
+		}
+
+		final int currentRegionId = client.getLocalPlayer().getWorldLocation().getRegionID();
+
+		switch (config.regionMode())
+		{
+			case DESTINATION_OR_ORIGIN:
+				return regions.contains(lastRegionId) || regions.contains(currentRegionId);
+			case DESTINATION_ONLY:
+				return regions.contains(currentRegionId);
+			case ORIGIN_ONLY:
+				return regions.contains(lastRegionId);
+		}
+		return true;
+	}
+
 	private void announceLoadTime(long time)
 	{
 		String runeliteMsg = new ChatMessageBuilder()
@@ -103,5 +148,30 @@ public class LoadTimePlugin extends Plugin
 			.type(ChatMessageType.CONSOLE)
 			.runeLiteFormattedMessage(runeliteMsg)
 			.build());
+	}
+
+	private void parseRegionIds()
+	{
+		String regionsConfig = config.regions();
+		if (regionsConfig == null)
+		{
+			regions = new ArrayList<>(0);
+			return;
+		}
+
+		regions = Text.fromCSV(regionsConfig).stream()
+			.map(str ->
+			{
+				try
+				{
+					return Integer.parseInt(str);
+				}
+				catch (NumberFormatException ex)
+				{
+					return null;
+				}
+			})
+			.filter(Objects::nonNull)
+			.collect(Collectors.toSet());
 	}
 }
