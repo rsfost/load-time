@@ -31,5 +31,14 @@ import net.runelite.client.config.ConfigItem;
 @ConfigGroup("loadtime")
 public interface LoadTimeConfig extends Config
 {
-
+    @ConfigItem(
+        keyName = "distanceThreshold",
+        name = "Distance threshold",
+        description = "Minimum distance moved in a single game tick to calculate load time",
+        position = 1
+    )
+    default int distanceThreshold()
+    {
+        return 50;
+    }
 }
