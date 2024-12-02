@@ -27,11 +27,22 @@ package rsfost.loadtime;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
+
+import java.awt.Color;
 
 @ConfigGroup(LoadTimeConfig.GROUP)
 public interface LoadTimeConfig extends Config
 {
     String GROUP = "loadtime";
+
+    @ConfigSection(
+        name = "Color options",
+        description = "How to color load time message for certain load times",
+        position = 100,
+        closedByDefault = false
+    )
+    String colorOptionsSection = "colorOptions";
 
     @ConfigItem(
         keyName = "distanceThreshold",
@@ -64,5 +75,65 @@ public interface LoadTimeConfig extends Config
     default RegionMode regionMode()
     {
         return RegionMode.DESTINATION_ONLY;
+    }
+
+    @ConfigItem(
+        keyName = "fastLoadTime",
+        name = "Fast load time",
+        description = "Maximum fast load time",
+        position = 1,
+        section = colorOptionsSection
+    )
+    default int fastLoadTime()
+    {
+        return 50;
+    }
+
+    @ConfigItem(
+        keyName = "fastLoadTimeColor",
+        name = "Fast load color",
+        description = "Color for fast load times",
+        position = 2,
+        section = colorOptionsSection
+    )
+    default Color fastLoadColor()
+    {
+        return Color.GREEN;
+    }
+
+    @ConfigItem(
+        keyName = "mediumLoadTime",
+        name = "Medium load time",
+        description = "Maximum medium load time",
+        position = 3,
+        section = colorOptionsSection
+    )
+    default int mediumLoadTime()
+    {
+        return 100;
+    }
+
+    @ConfigItem(
+        keyName = "mediumLoadTimeColor",
+        name = "Medium load color",
+        description = "Color for medium load times",
+        position = 4,
+        section = colorOptionsSection
+    )
+    default Color mediumLoadColor()
+    {
+        return Color.YELLOW;
+    }
+
+    @ConfigItem(
+        keyName = "slowLoadTimeColor",
+        name = "Slow load color",
+        description = "Color for slow load times",
+        position = 5,
+        section = colorOptionsSection
+    )
+    default Color slowLoadColor()
+    {
+        return Color.RED;
     }
 }

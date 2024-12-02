@@ -32,7 +32,6 @@ import net.runelite.api.Client;
 import net.runelite.api.Constants;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameTick;
-import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
@@ -43,6 +42,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.util.Text;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
@@ -138,11 +138,22 @@ public class LoadTimePlugin extends Plugin
 
 	private void announceLoadTime(long time)
 	{
+		final Color color;
+		if (time < config.fastLoadTime())
+		{
+			color = config.fastLoadColor();
+		}
+		else if (time < config.mediumLoadTime())
+		{
+			color = config.mediumLoadColor();
+		}
+		else
+		{
+			color = config.slowLoadColor();
+		}
+
 		String runeliteMsg = new ChatMessageBuilder()
-			.append(ChatColorType.NORMAL)
-			.append("Load time: ")
-			.append(Long.toString(time))
-			.append("ms")
+			.append(color, String.format("Load time: %dms", time))
 			.build();
 		chatMessageManager.queue(QueuedMessage.builder()
 			.type(ChatMessageType.CONSOLE)
