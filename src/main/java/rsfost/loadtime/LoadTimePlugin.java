@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Load time",
+	name = "Load Time",
 	description = "Estimate load times when moving over a specified distance"
 )
 public class LoadTimePlugin extends Plugin
