@@ -32,6 +32,7 @@ import net.runelite.api.Client;
 import net.runelite.api.Constants;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
@@ -61,6 +62,8 @@ public class LoadTimePlugin extends Plugin
 	private LoadTimeConfig config;
 	@Inject
 	private ChatMessageManager chatMessageManager;
+	@Inject
+	private LoadTimeEstimator loadTimeEstimator;
 
 	private Collection<Integer> regions;
 
@@ -85,6 +88,8 @@ public class LoadTimePlugin extends Plugin
 		lastGameTickTime = currentTime;
 		lastWp = currentWp;
 		lastRegionId = currentRegionId;
+
+		loadTimeEstimator.addTick();
 	}
 
 	@Subscribe
@@ -95,6 +100,12 @@ public class LoadTimePlugin extends Plugin
 			return;
 		}
 		parseRegionIds();
+	}
+
+	@Subscribe
+	public void onItemContainerChanged(ItemContainerChanged event)
+	{
+		loadTimeEstimator.checkItemContainer(event);
 	}
 
 	@Override
