@@ -31,6 +31,7 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
@@ -55,6 +56,8 @@ import java.util.stream.Collectors;
 )
 public class LoadTimePlugin extends Plugin
 {
+	private final FpsCalc fpsCalc = new FpsCalc();
+
 	@Inject
 	private Client client;
 	@Inject
@@ -85,6 +88,13 @@ public class LoadTimePlugin extends Plugin
 		lastGameTickTime = currentTime;
 		lastWp = currentWp;
 		lastRegionId = currentRegionId;
+	}
+
+	@Subscribe
+	public void onClientTick(ClientTick tick)
+	{
+		// Not really fps. Use onBeforeRender for that
+		fpsCalc.frame();
 	}
 
 	@Subscribe
