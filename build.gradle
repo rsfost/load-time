@@ -27,7 +27,7 @@ dependencies {
 }
 
 group = 'rsfost.loadtime'
-version = '0.2-SNAPSHOT'
+version = '1.0-SNAPSHOT'
 
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
