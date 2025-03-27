@@ -77,30 +77,19 @@ public class LoadTimePlugin extends Plugin
 	private Collection<Integer> regions;
 
 	private WorldPoint lastWp;
-	private long lastGameTickTime;
 	private int lastRegionId;
 
-	@Getter(AccessLevel.PACKAGE)
-	@Setter(AccessLevel.PACKAGE)
-	@Accessors(fluent = true)
 	private boolean shouldAnnounce;
 
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
-		final long currentTime = System.currentTimeMillis();
 		final WorldPoint currentWp = client.getLocalPlayer().getWorldLocation();
 		final int currentRegionId = currentWp.getRegionID();
 
-		if (lastWp != null && lastWp.distanceTo(currentWp) >= config.distanceThreshold() && includeRegion())
-		{
-			final long loadTime = Math.max(0,
-				currentTime - lastGameTickTime - Constants.GAME_TICK_LENGTH);
-			shouldAnnounce = true;
-			announceLoadTime(loadTime, 1);
-		}
+		shouldAnnounce = lastWp != null &&
+				lastWp.distanceTo(currentWp) >= config.distanceThreshold() && includeRegion();
 
-		lastGameTickTime = currentTime;
 		lastWp = currentWp;
 		lastRegionId = currentRegionId;
 	}
@@ -157,8 +146,13 @@ public class LoadTimePlugin extends Plugin
 		return true;
 	}
 
-	void announceLoadTime(long time, int method)
+	boolean announceLoadTime(long time)
 	{
+		if (!shouldAnnounce)
+		{
+			return false;
+		}
+
 		final Color color;
 		if (time < config.fastLoadTime())
 		{
@@ -174,12 +168,14 @@ public class LoadTimePlugin extends Plugin
 		}
 
 		String runeliteMsg = new ChatMessageBuilder()
-			.append(color, String.format("(method %d) Load time: %dms", method, time))
+			.append(color, String.format("Load time: %dms", time))
 			.build();
 		chatMessageManager.queue(QueuedMessage.builder()
 			.type(ChatMessageType.CONSOLE)
 			.runeLiteFormattedMessage(runeliteMsg)
 			.build());
+
+		return true;
 	}
 
 	private void parseRegionIds()

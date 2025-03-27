@@ -75,21 +75,9 @@ class FrameListener implements Runnable
 		if (lastScene != null && lastScene != scene)
 		{
 			final long loadTime = (currentTime - mapLoadStartTime) / NANOS_PER_MILLI;
-			final int startTick = mapLoadStartTick;
-
-			clientThread.invokeLater(() -> {
-				boolean shouldAnnounce = plugin.shouldAnnounce();
-				if (!shouldAnnounce && client.getTickCount() == startTick)
-				{
-					return false;
-				}
-				if (shouldAnnounce)
-				{
-					plugin.announceLoadTime(loadTime, 2);
-					plugin.shouldAnnounce(false);
-				}
-				return true;
-			});
+			final int startTick = client.getTickCount();
+			clientThread.invokeLater(() ->
+				plugin.announceLoadTime(loadTime) || client.getTickCount() != startTick);
 			mapLoadStartTime = -1;
 		}
 		else if (mapLoader != null && mapLoader.getState() == Thread.State.RUNNABLE && mapLoadStartTime < 0)
