@@ -27,11 +27,13 @@ package rsfost.loadtime;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.ChatMessageType;
-import net.runelite.api.Client;
-import net.runelite.api.Constants;
+import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.ClientTick;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.PreMapLoad;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
@@ -40,12 +42,14 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.DrawManager;
 import net.runelite.client.util.Text;
 
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -58,15 +62,25 @@ public class LoadTimePlugin extends Plugin
 	@Inject
 	private Client client;
 	@Inject
+	private DrawManager drawManager;
+	@Inject
 	private LoadTimeConfig config;
 	@Inject
 	private ChatMessageManager chatMessageManager;
+	@Inject
+	private ClientThread clientThread;
 
 	private Collection<Integer> regions;
 
 	private WorldPoint lastWp;
 	private long lastGameTickTime;
 	private int lastRegionId;
+
+	private Thread mapLoader;
+	private Scene lastScene;
+	private long mapLoadStartTime;
+	private boolean shouldAnnounce;
+	private int mapLoadStartTick;
 
 	@Subscribe
 	public void onGameTick(GameTick tick)
@@ -79,12 +93,57 @@ public class LoadTimePlugin extends Plugin
 		{
 			final long loadTime = Math.max(0,
 				currentTime - lastGameTickTime - Constants.GAME_TICK_LENGTH);
-			announceLoadTime(loadTime);
+			shouldAnnounce = true;
+			announceLoadTime(loadTime, 1);
 		}
 
 		lastGameTickTime = currentTime;
 		lastWp = currentWp;
 		lastRegionId = currentRegionId;
+	}
+
+	public void onFrame()
+	{
+		final long currentTime = System.currentTimeMillis();
+		Player player = client.getLocalPlayer();
+		if (player == null)
+		{
+			lastScene = null;
+			return;
+		}
+
+		Scene scene = player.getWorldView().getScene();
+		if (lastScene != null && lastScene != scene)
+		{
+			final long loadTime = currentTime - mapLoadStartTime;
+			final int startTick = mapLoadStartTick;
+
+			clientThread.invokeLater(() -> {
+				if (!shouldAnnounce && client.getTickCount() == startTick)
+				{
+					return false;
+				}
+				if (shouldAnnounce)
+				{
+					announceLoadTime(loadTime, 2);
+					shouldAnnounce = false;
+				}
+				return true;
+			});
+			mapLoadStartTime = -1;
+		}
+		else if (mapLoader != null && mapLoader.getState() == Thread.State.RUNNABLE && mapLoadStartTime < 0)
+		{
+			mapLoadStartTick = client.getTickCount();
+			mapLoadStartTime = System.currentTimeMillis();
+		}
+		lastScene = scene;
+	}
+
+	@Subscribe
+	public void onPreMapLoad(PreMapLoad event)
+	{
+		mapLoader = Thread.currentThread();
 	}
 
 	@Subscribe
@@ -101,12 +160,13 @@ public class LoadTimePlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		parseRegionIds();
+		drawManager.registerEveryFrameListener(this::onFrame);
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
-
+		drawManager.unregisterEveryFrameListener(this::onFrame);
 	}
 
 	@Provides
@@ -136,8 +196,13 @@ public class LoadTimePlugin extends Plugin
 		return true;
 	}
 
-	private void announceLoadTime(long time)
+	private void announceLoadTime(long time, int method)
 	{
+		if (!shouldAnnounce)
+		{
+			return;
+		}
+
 		final Color color;
 		if (time < config.fastLoadTime())
 		{
@@ -153,7 +218,7 @@ public class LoadTimePlugin extends Plugin
 		}
 
 		String runeliteMsg = new ChatMessageBuilder()
-			.append(color, String.format("Load time: %dms", time))
+			.append(color, String.format("(method %d) Load time: %dms", method, time))
 			.build();
 		chatMessageManager.queue(QueuedMessage.builder()
 			.type(ChatMessageType.CONSOLE)
