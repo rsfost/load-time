@@ -35,6 +35,8 @@ import javax.inject.Inject;
 
 class FrameListener implements Runnable
 {
+	private static final long NANOS_PER_MILLI = 1_000_000L;
+
 	private final LoadTimePlugin plugin;
 	private final Client client;
 	private final ClientThread clientThread;
@@ -61,7 +63,7 @@ class FrameListener implements Runnable
 	@Override
 	public void run()
 	{
-		final long currentTime = System.currentTimeMillis();
+		final long currentTime = System.nanoTime();
 		Player player = client.getLocalPlayer();
 		if (player == null)
 		{
@@ -72,7 +74,7 @@ class FrameListener implements Runnable
 		Scene scene = player.getWorldView().getScene();
 		if (lastScene != null && lastScene != scene)
 		{
-			final long loadTime = currentTime - mapLoadStartTime;
+			final long loadTime = (currentTime - mapLoadStartTime) / NANOS_PER_MILLI;
 			final int startTick = mapLoadStartTick;
 
 			clientThread.invokeLater(() -> {
@@ -93,7 +95,7 @@ class FrameListener implements Runnable
 		else if (mapLoader != null && mapLoader.getState() == Thread.State.RUNNABLE && mapLoadStartTime < 0)
 		{
 			mapLoadStartTick = client.getTickCount();
-			mapLoadStartTime = System.currentTimeMillis();
+			mapLoadStartTime = currentTime;
 		}
 		lastScene = scene;
 	}
