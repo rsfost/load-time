@@ -35,7 +35,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
+import net.runelite.api.GameState;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
@@ -95,6 +97,15 @@ public class LoadTimePlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		if (event.getGameState() == GameState.LOGIN_SCREEN)
+		{
+			lastWp = null;
+		}
+	}
+
+	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
 		if (!event.getGroup().equals(LoadTimeConfig.GROUP))
@@ -117,6 +128,7 @@ public class LoadTimePlugin extends Plugin
 	{
 		drawManager.unregisterEveryFrameListener(frameListener);
 		eventBus.unregister(frameListener);
+		lastWp = null;
 	}
 
 	@Provides
