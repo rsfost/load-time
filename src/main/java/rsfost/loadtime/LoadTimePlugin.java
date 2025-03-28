@@ -29,19 +29,21 @@ import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
-import net.runelite.api.Constants;
+import net.runelite.api.GameState;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.DrawManager;
 import net.runelite.client.util.Text;
-
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,33 +60,42 @@ public class LoadTimePlugin extends Plugin
 	@Inject
 	private Client client;
 	@Inject
-	private LoadTimeConfig config;
+	private FrameListener frameListener;
+	@Inject
+	private EventBus eventBus;
 	@Inject
 	private ChatMessageManager chatMessageManager;
+	@Inject
+	private DrawManager drawManager;
+	@Inject
+	private LoadTimeConfig config;
 
 	private Collection<Integer> regions;
 
 	private WorldPoint lastWp;
-	private long lastGameTickTime;
 	private int lastRegionId;
+	private boolean shouldAnnounce;
 
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
-		final long currentTime = System.currentTimeMillis();
 		final WorldPoint currentWp = client.getLocalPlayer().getWorldLocation();
 		final int currentRegionId = currentWp.getRegionID();
 
-		if (lastWp != null && lastWp.distanceTo(currentWp) >= config.distanceThreshold() && includeRegion())
-		{
-			final long loadTime = Math.max(0,
-				currentTime - lastGameTickTime - Constants.GAME_TICK_LENGTH);
-			announceLoadTime(loadTime);
-		}
+		shouldAnnounce = lastWp != null &&
+				lastWp.distanceTo(currentWp) >= config.distanceThreshold() && includeRegion();
 
-		lastGameTickTime = currentTime;
 		lastWp = currentWp;
 		lastRegionId = currentRegionId;
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		if (event.getGameState() == GameState.LOGIN_SCREEN)
+		{
+			lastWp = null;
+		}
 	}
 
 	@Subscribe
@@ -101,12 +112,16 @@ public class LoadTimePlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		parseRegionIds();
+		drawManager.registerEveryFrameListener(frameListener);
+		eventBus.register(frameListener);
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
-
+		drawManager.unregisterEveryFrameListener(frameListener);
+		eventBus.unregister(frameListener);
+		lastWp = null;
 	}
 
 	@Provides
@@ -136,8 +151,13 @@ public class LoadTimePlugin extends Plugin
 		return true;
 	}
 
-	private void announceLoadTime(long time)
+	boolean announceLoadTime(long time)
 	{
+		if (!shouldAnnounce)
+		{
+			return false;
+		}
+
 		final Color color;
 		if (time < config.fastLoadTime())
 		{
@@ -159,6 +179,8 @@ public class LoadTimePlugin extends Plugin
 			.type(ChatMessageType.CONSOLE)
 			.runeLiteFormattedMessage(runeliteMsg)
 			.build());
+
+		return true;
 	}
 
 	private void parseRegionIds()
