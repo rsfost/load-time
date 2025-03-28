@@ -26,15 +26,9 @@ package rsfost.loadtime;
 
 import com.google.inject.Provides;
 import javax.inject.Inject;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.Value;
-import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
-import net.runelite.api.Constants;
 import net.runelite.api.GameState;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
@@ -70,17 +64,16 @@ public class LoadTimePlugin extends Plugin
 	@Inject
 	private EventBus eventBus;
 	@Inject
+	private ChatMessageManager chatMessageManager;
+	@Inject
 	private DrawManager drawManager;
 	@Inject
 	private LoadTimeConfig config;
-	@Inject
-	private ChatMessageManager chatMessageManager;
 
 	private Collection<Integer> regions;
 
 	private WorldPoint lastWp;
 	private int lastRegionId;
-
 	private boolean shouldAnnounce;
 
 	@Subscribe

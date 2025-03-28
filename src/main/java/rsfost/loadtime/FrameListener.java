@@ -44,7 +44,6 @@ class FrameListener implements Runnable
 	private Thread mapLoader;
 	private Scene lastScene;
 	private long mapLoadStartTime;
-	private int mapLoadStartTick;
 
 	@Inject
 	public FrameListener(LoadTimePlugin plugin, Client client, ClientThread clientThread)
@@ -82,7 +81,6 @@ class FrameListener implements Runnable
 		}
 		else if (mapLoader != null && mapLoader.getState() == Thread.State.RUNNABLE && mapLoadStartTime < 0)
 		{
-			mapLoadStartTick = client.getTickCount();
 			mapLoadStartTime = currentTime;
 		}
 		lastScene = scene;
