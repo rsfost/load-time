@@ -73,6 +73,10 @@ class FrameListener implements Runnable
 		Scene scene = player.getWorldView().getScene();
 		if (lastScene != null && lastScene != scene)
 		{
+			if (mapLoadStartTime < 0)
+			{
+				return;
+			}
 			final long loadTime = (currentTime - mapLoadStartTime) / NANOS_PER_MILLI;
 			final int startTick = client.getTickCount();
 			clientThread.invokeLater(() ->
