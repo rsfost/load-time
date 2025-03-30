@@ -75,6 +75,7 @@ class FrameListener implements Runnable
 		{
 			if (mapLoadStartTime < 0)
 			{
+				lastScene = scene;
 				return;
 			}
 			final long loadTime = (currentTime - mapLoadStartTime) / NANOS_PER_MILLI;
