@@ -24,6 +24,7 @@
  */
 package rsfost.loadtime;
 
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.Scene;
@@ -33,6 +34,7 @@ import net.runelite.client.eventbus.Subscribe;
 
 import javax.inject.Inject;
 
+@Slf4j
 class FrameListener implements Runnable
 {
 	private static final long NANOS_PER_MILLI = 1_000_000L;
@@ -43,6 +45,7 @@ class FrameListener implements Runnable
 
 	private Thread mapLoader;
 	private Scene lastScene;
+	private long lastFrameTime;
 	private long mapLoadStartTime;
 
 	@Inject
@@ -67,6 +70,7 @@ class FrameListener implements Runnable
 		if (player == null)
 		{
 			lastScene = null;
+			lastFrameTime = currentTime;
 			return;
 		}
 
@@ -75,8 +79,8 @@ class FrameListener implements Runnable
 		{
 			if (mapLoadStartTime < 0)
 			{
-				lastScene = scene;
-				return;
+				log.debug("Scene change with map load start <0. Using last frame time as load start.");
+				mapLoadStartTime = lastFrameTime;
 			}
 			final long loadTime = (currentTime - mapLoadStartTime) / NANOS_PER_MILLI;
 			final int startTick = client.getTickCount();
@@ -87,7 +91,9 @@ class FrameListener implements Runnable
 		else if (mapLoader != null && mapLoader.getState() == Thread.State.RUNNABLE && mapLoadStartTime < 0)
 		{
 			mapLoadStartTime = currentTime;
+			log.debug("Map load started at {}", mapLoadStartTime);
 		}
 		lastScene = scene;
+		lastFrameTime = currentTime;
 	}
 }
