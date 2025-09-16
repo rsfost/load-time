@@ -30,6 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.Player;
+import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -137,7 +139,18 @@ public class LoadTimePlugin extends Plugin
 			return true;
 		}
 
-		final int currentRegionId = client.getLocalPlayer().getWorldLocation().getRegionID();
+		final Player player = client.getLocalPlayer();
+		final WorldView worldView = player.getWorldView();
+
+		final int currentRegionId;
+		if (worldView.isInstance())
+		{
+			currentRegionId = WorldPoint.fromLocalInstance(client, player.getLocalLocation()).getRegionID();
+		}
+		else
+		{
+			currentRegionId = player.getWorldLocation().getRegionID();
+		}
 
 		switch (config.regionMode())
 		{
