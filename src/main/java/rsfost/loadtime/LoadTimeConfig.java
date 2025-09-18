@@ -37,9 +37,17 @@ public interface LoadTimeConfig extends Config
     String GROUP = "loadtime";
 
     @ConfigSection(
+        name = "Regions",
+        description = "Which regions to include in load time calculation",
+        position = 100,
+        closedByDefault = false
+    )
+    String regionOptionsSection = "regionOptions";
+
+    @ConfigSection(
         name = "Color options",
         description = "How to color load time message for certain load times",
-        position = 100,
+        position = 200,
         closedByDefault = false
     )
     String colorOptionsSection = "colorOptions";
@@ -56,23 +64,61 @@ public interface LoadTimeConfig extends Config
     }
 
     @ConfigItem(
-        keyName = "regions",
-        name = "Region IDs",
-        description = "Comma-separated list of region IDs to include for load time calculation",
-        position = 2
+        keyName = "enableRegions",
+        name = "Enable region restriction",
+        description = "Only include these specific regions for load time calculation",
+        position = 1,
+        section = regionOptionsSection
     )
-    default String regions()
+    default boolean enableRegions()
+    {
+        return false;
+    }
+
+    @ConfigItem(
+        keyName = "enableBaLobbyRegion",
+        name = "BA lobby",
+        description = "Include barbarian assault lobby region",
+        position = 2,
+        section = regionOptionsSection
+    )
+    default boolean enableBaLobbyRegion()
+    {
+        return false;
+    }
+
+    @ConfigItem(
+        keyName = "enableBaWaveRegion",
+        name = "BA wave",
+        description = "Include barbarian assault wave region",
+        position = 3,
+        section = regionOptionsSection
+    )
+    default boolean enableBaWaveRegion()
+    {
+        return false;
+    }
+
+    @ConfigItem(
+        keyName = "regions",
+        name = "Custom regions",
+        description = "Comma-separated list of region IDs to include for load time calculation",
+        position = 4,
+        section = regionOptionsSection
+    )
+    default String customRegions()
     {
         return "";
     }
 
     @ConfigItem(
         keyName = "regionMode",
-        name = "Region mode",
+        name = "Custom mode",
         description = "Whether to treat above list as destination or origin regions, or both",
-        position = 3
+        position = 5,
+        section = regionOptionsSection
     )
-    default RegionMode regionMode()
+    default RegionMode customRegionMode()
     {
         return RegionMode.DESTINATION_ONLY;
     }

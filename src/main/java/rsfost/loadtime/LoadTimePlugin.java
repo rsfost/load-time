@@ -47,8 +47,9 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.DrawManager;
 import net.runelite.client.util.Text;
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -59,6 +60,10 @@ import java.util.stream.Collectors;
 )
 public class LoadTimePlugin extends Plugin
 {
+	private static final int BA_LOBBY_REGION = 10322;
+	private static final int BA_WAVE_REGION = 7509;
+	private static final int BA_WAVE_10_REGION = 7508;
+
 	@Inject
 	private Client client;
 	@Inject
@@ -152,7 +157,7 @@ public class LoadTimePlugin extends Plugin
 			currentRegionId = player.getWorldLocation().getRegionID();
 		}
 
-		switch (config.regionMode())
+		switch (config.customRegionMode())
 		{
 			case DESTINATION_OR_ORIGIN:
 				return regions.contains(lastRegionId) || regions.contains(currentRegionId);
@@ -198,14 +203,31 @@ public class LoadTimePlugin extends Plugin
 
 	private void parseRegionIds()
 	{
-		String regionsConfig = config.regions();
-		if (regionsConfig == null)
+		if (!config.enableRegions())
 		{
-			regions = new ArrayList<>(0);
+			regions = Collections.emptySet();
 			return;
 		}
 
-		regions = Text.fromCSV(regionsConfig).stream()
+		regions = new HashSet<>();
+
+		if (config.enableBaLobbyRegion())
+		{
+			regions.add(BA_LOBBY_REGION);
+		}
+		if (config.enableBaWaveRegion())
+		{
+			regions.add(BA_WAVE_REGION);
+			regions.add(BA_WAVE_10_REGION);
+		}
+
+		String customRegionsStr = config.customRegions();
+		if (customRegionsStr == null)
+		{
+			return;
+		}
+
+		Collection<Integer> customRegions = Text.fromCSV(customRegionsStr).stream()
 			.map(str ->
 			{
 				try
@@ -217,7 +239,7 @@ public class LoadTimePlugin extends Plugin
 					return null;
 				}
 			})
-			.filter(Objects::nonNull)
-			.collect(Collectors.toSet());
+			.filter(Objects::nonNull).collect(Collectors.toList());
+		regions.addAll(customRegions);
 	}
 }
