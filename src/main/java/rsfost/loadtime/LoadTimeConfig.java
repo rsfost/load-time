@@ -37,8 +37,8 @@ public interface LoadTimeConfig extends Config
     String GROUP = "loadtime";
 
     @ConfigSection(
-        name = "Regions",
-        description = "Which regions to include in load time calculation",
+        name = "Region restrictions",
+        description = "Restrict load time calculation to specific regions",
         position = 100,
         closedByDefault = false
     )
@@ -52,28 +52,13 @@ public interface LoadTimeConfig extends Config
     )
     String colorOptionsSection = "colorOptions";
 
-    @ConfigItem(
-        keyName = "distanceThreshold",
-        name = "Distance threshold",
-        description = "Minimum distance moved in a single game tick to calculate load time",
-        position = 1
+    @ConfigSection(
+        name = "Advanced",
+        description = "Advanced configuration",
+        position = 300,
+        closedByDefault = true
     )
-    default int distanceThreshold()
-    {
-        return 50;
-    }
-
-    @ConfigItem(
-        keyName = "enableRegions",
-        name = "Enable region restriction",
-        description = "Only include these specific regions for load time calculation",
-        position = 1,
-        section = regionOptionsSection
-    )
-    default boolean enableRegions()
-    {
-        return false;
-    }
+    String advancedOptionsSection = "advanced";
 
     @ConfigItem(
         keyName = "enableBaLobbyRegion",
@@ -181,5 +166,17 @@ public interface LoadTimeConfig extends Config
     default Color slowLoadColor()
     {
         return Color.RED;
+    }
+
+    @ConfigItem(
+        keyName = "distanceThreshold",
+        name = "Distance threshold",
+        description = "Minimum distance moved in a single game tick to calculate load time",
+        position = 1,
+        section = advancedOptionsSection
+    )
+    default int distanceThreshold()
+    {
+        return 50;
     }
 }

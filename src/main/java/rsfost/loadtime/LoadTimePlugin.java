@@ -47,9 +47,8 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.DrawManager;
 import net.runelite.client.util.Text;
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -139,7 +138,8 @@ public class LoadTimePlugin extends Plugin
 
 	private boolean includeRegion()
 	{
-		if (regions.isEmpty())
+		// Always enable if no region restrictions
+		if (regions.isEmpty() && !config.enableBaLobbyRegion() && !config.enableBaWaveRegion())
 		{
 			return true;
 		}
@@ -157,6 +157,15 @@ public class LoadTimePlugin extends Plugin
 			currentRegionId = player.getWorldLocation().getRegionID();
 		}
 
+		if (config.enableBaWaveRegion() && (currentRegionId == BA_WAVE_REGION || currentRegionId == BA_WAVE_10_REGION))
+		{
+			return true;
+		}
+		else if (config.enableBaLobbyRegion() && currentRegionId == BA_LOBBY_REGION)
+		{
+			return true;
+		}
+
 		switch (config.customRegionMode())
 		{
 			case DESTINATION_OR_ORIGIN:
@@ -166,7 +175,8 @@ public class LoadTimePlugin extends Plugin
 			case ORIGIN_ONLY:
 				return regions.contains(lastRegionId);
 		}
-		return true;
+
+		return false;
 	}
 
 	boolean announceLoadTime(long time)
@@ -203,31 +213,14 @@ public class LoadTimePlugin extends Plugin
 
 	private void parseRegionIds()
 	{
-		if (!config.enableRegions())
+		String regionsConfig = config.customRegions();
+		if (regionsConfig == null)
 		{
-			regions = Collections.emptySet();
+			regions = new ArrayList<>(0);
 			return;
 		}
 
-		regions = new HashSet<>();
-
-		if (config.enableBaLobbyRegion())
-		{
-			regions.add(BA_LOBBY_REGION);
-		}
-		if (config.enableBaWaveRegion())
-		{
-			regions.add(BA_WAVE_REGION);
-			regions.add(BA_WAVE_10_REGION);
-		}
-
-		String customRegionsStr = config.customRegions();
-		if (customRegionsStr == null)
-		{
-			return;
-		}
-
-		Collection<Integer> customRegions = Text.fromCSV(customRegionsStr).stream()
+		regions = Text.fromCSV(regionsConfig).stream()
 			.map(str ->
 			{
 				try
@@ -239,7 +232,7 @@ public class LoadTimePlugin extends Plugin
 					return null;
 				}
 			})
-			.filter(Objects::nonNull).collect(Collectors.toList());
-		regions.addAll(customRegions);
+			.filter(Objects::nonNull)
+			.collect(Collectors.toSet());
 	}
 }
