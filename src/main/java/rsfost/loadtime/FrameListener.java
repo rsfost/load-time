@@ -46,7 +46,7 @@ class FrameListener implements Runnable
 	private Thread mapLoader;
 	private Scene lastScene;
 	private long lastFrameTime;
-	private long mapLoadStartTime;
+	private long mapLoadStartTime = -1;
 
 	@Inject
 	public FrameListener(LoadTimePlugin plugin, Client client, ClientThread clientThread)
@@ -60,6 +60,14 @@ class FrameListener implements Runnable
 	public void onPreMapLoad(PreMapLoad event)
 	{
 		mapLoader = Thread.currentThread();
+	}
+
+	void reset()
+	{
+		mapLoader = null;
+		lastScene = null;
+		lastFrameTime = 0;
+		mapLoadStartTime = -1;
 	}
 
 	@Override

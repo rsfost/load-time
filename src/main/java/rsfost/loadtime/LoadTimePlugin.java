@@ -118,6 +118,7 @@ public class LoadTimePlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		parseRegionIds();
+		frameListener.reset();
 		drawManager.registerEveryFrameListener(frameListener);
 		eventBus.register(frameListener);
 	}
