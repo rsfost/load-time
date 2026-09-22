@@ -119,6 +119,7 @@ public class LoadTimePlugin extends Plugin
 	{
 		parseRegionIds();
 		frameListener.reset();
+		frameListener.startWatcher();
 		drawManager.registerEveryFrameListener(frameListener);
 		eventBus.register(frameListener);
 	}
@@ -128,6 +129,7 @@ public class LoadTimePlugin extends Plugin
 	{
 		drawManager.unregisterEveryFrameListener(frameListener);
 		eventBus.unregister(frameListener);
+		frameListener.stopWatcher();
 		lastWp = null;
 	}
 
