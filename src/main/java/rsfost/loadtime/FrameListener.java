@@ -58,6 +58,7 @@ class FrameListener implements Runnable
 	// here; the frame listener uses it when set and falls back to its own detection otherwise.
 	private final AtomicLong watchedStartTime = new AtomicLong(-1);
 	private Thread watcher;
+	private volatile boolean watching;
 
 	@Inject
 	public FrameListener(LoadTimePlugin plugin, Client client, ClientThread clientThread)
@@ -85,6 +86,7 @@ class FrameListener implements Runnable
 	void startWatcher()
 	{
 		stopWatcher();
+		watching = true;
 		Thread t = new Thread(this::watch, "Load Time watcher");
 		t.setDaemon(true);
 		t.start();
@@ -93,18 +95,20 @@ class FrameListener implements Runnable
 
 	void stopWatcher()
 	{
+		// no interrupt: the loop checks the flag every interval, and unpark ends the current wait early
+		watching = false;
 		Thread t = watcher;
 		watcher = null;
 		if (t != null)
 		{
-			t.interrupt();
+			LockSupport.unpark(t);
 		}
 	}
 
 	private void watch()
 	{
 		boolean wasRunning = false;
-		while (!Thread.currentThread().isInterrupted())
+		while (watching)
 		{
 			Thread loader = mapLoader;
 			boolean running = loader != null && loader.getState() == Thread.State.RUNNABLE;
