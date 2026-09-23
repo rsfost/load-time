@@ -132,10 +132,17 @@ class FrameListener implements Runnable
 		{
 			lastScene = null;
 			lastFrameTime = currentTime;
+			watchedStartTime.set(-1);
 			return;
 		}
 
 		Scene scene = player.getWorldView().getScene();
+		if (lastScene == null)
+		{
+			// first frame with a scene: the load that built it started before we were tracking
+			watchedStartTime.set(-1);
+		}
+
 		if (lastScene != null && lastScene != scene)
 		{
 			final long watchedStart = watchedStartTime.getAndSet(-1);
